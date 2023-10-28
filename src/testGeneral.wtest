@@ -1,0 +1,101 @@
+import habitaciones.*
+
+describe "test punto 1" {
+	const usoGeneral = new UsoGeneral()
+	const dormitorio = new Dormitorio()
+	const banio = new Banio()
+	const cocina = new Cocina(metrosCuadrados =5)
+	
+	const lucas = new Persona(edad = 26,sabeCocinar = false)
+	const manuel = new Persona(edad = 14,sabeCocinar = true)
+	const carla = new Persona(edad = 3,sabeCocinar= false)
+	
+	test "Nivel de confort de lucas en usoGeneral es de 10"{
+		assert.equals(10,usoGeneral.nivelDeConfort(lucas))
+	}
+	test "Nivel de confort de lucas en dormitorio es de 10"{
+		assert.equals(10,dormitorio.nivelDeConfort(lucas))
+	}
+	test "Nivel de confort de lucas en banio es de 14"{
+		assert.equals(14,banio.nivelDeConfort(lucas))
+	}
+	test "Nivel de confort de lucas en cocina es de 10"{
+		assert.equals(10,cocina.nivelDeConfort(lucas))
+	}
+	
+	test "Nivel de confort de manuel en usoGeneral es de 10"{
+		assert.equals(10,usoGeneral.nivelDeConfort(manuel))
+	}
+	test "Nivel de confort de manuel en dormitorio es de 20"{
+		dormitorio.agregarEnDormitorio(manuel)
+		assert.equals(20,dormitorio.nivelDeConfort(manuel))
+	}
+	test "Nivel de confort de manuel en banio es de 14"{
+		assert.equals(14,banio.nivelDeConfort(manuel))
+	}
+	test "Nivel de confort de manuel en cocina es de 10.5"{
+		assert.equals(10.5,cocina.nivelDeConfort(manuel))
+	}
+	
+	test "Nivel de confort de carla  en usoGeneral es de 10"{
+		assert.equals(10,usoGeneral.nivelDeConfort(carla))
+	}
+	test "Nivel de confort de carla en dormitorio es de 10"{
+		assert.equals(10,dormitorio.nivelDeConfort(carla))
+	}
+	test "Nivel de confort de carla en banio es de 12"{
+		assert.equals(12,banio.nivelDeConfort(carla))
+	}
+	test "Nivel de confort de carla en cocina es de 10"{
+		assert.equals(10,cocina.nivelDeConfort(carla))
+	}
+}
+
+describe "text parte 2"{
+	const usoGeneral = new UsoGeneral()
+	const dormitorio = new Dormitorio()
+	const banio = new Banio()
+	const cocina = new Cocina(metrosCuadrados =5)
+	
+	const lucas = new Persona(edad = 26,sabeCocinar = true)
+	const manuel = new Persona(edad = 14,sabeCocinar = true)
+	const carla = new Persona(edad = 3,sabeCocinar= false)
+	const luis = new Persona(edad = 20,sabeCocinar= false)
+	
+	method initialize(){
+		dormitorio.agregarEnDormitorio(lucas)
+		dormitorio.agregarEnDormitorio(manuel)
+		dormitorio.agregarEnDormitorio(carla)
+		cocina.entrar(lucas)
+		dormitorio.entrar(manuel)
+		banio.entrar(carla)
+		usoGeneral.entrar(luis)
+	}
+	
+	test "Carla  puede entrar a Cocina"{
+		cocina.entrar(carla)
+		assert.equals(#{lucas,carla},cocina.ocupantes())
+	}
+	
+	test "luis puede entrar al baño"{
+		banio.entrar(luis)
+		assert.equals(#{luis,carla},banio.ocupantes())
+	}
+	
+	test "luis puede entrar al dormitorio"{
+		dormitorio.entrar(carla)
+		dormitorio.entrar(lucas)
+		dormitorio.entrar(luis)
+		assert.equals(#{manuel,carla,lucas,luis},dormitorio.ocupantes())
+	}
+	
+	test "todos pueden entrar en la sala de estar"{
+		usoGeneral.entrar(lucas)
+		usoGeneral.entrar(carla)
+		usoGeneral.entrar(manuel)
+		assert.equals(#{luis,lucas,carla,manuel},usoGeneral.ocupantes())
+	}
+	
+	
+	
+}

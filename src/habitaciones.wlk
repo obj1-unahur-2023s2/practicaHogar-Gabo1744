@@ -1,29 +1,33 @@
-import casas.*
-import familias.*
-
 class Habitacion {
 	const property ocupantes = #{}
-	method nivelDeConfort(persona) = 10 
 	
-	method quitarOcupante(ocupante){
-		ocupantes.remove(ocupante)
+	method quitarOcupante(unaPersona){
+		ocupantes.remove(unaPersona)
 	}
-	
-	method edadDeOcupantes() = ocupantes.map({o => o.edad()})
 	
 	method estaVacia() = ocupantes.isEmpty()
 	
 	method entrar(unaPersona){
-		if(self.estaVacia() or self.puedeEntrar(unaPersona)){ 
-			unaPersona.habitacion().quitarOcupante(unaPersona)
-			ocupantes.add(unaPersona)
-			unaPersona.habitacion(self)
-			
+		if (not self.estaVacia() and not self.puedeEntrar(unaPersona)){
+			self.error("No puede ingresar a la habitacion")
 		}
+		if(unaPersona.habitacion() != null){
+			unaPersona.habitacion().quitarOcupante(unaPersona)
+		}
+		unaPersona.habitacion(self)
+		ocupantes.add(unaPersona)
 	}
 	
 	method puedeEntrar(unaPersona)
 	
+	method nivelDeConfort(unaPersona) = 10
+	
+	method ocupanteMasViejos() = ocupantes.max({p => p.edad()})
+	
+	method nivelDeConfortDeCadaOcupante() = ocupantes.sum({p => self.nivelDeConfort(p)})
+
+	method cantidadEnHabitacion() = ocupantes.size()
+
 }
 
 class UsoGeneral inherits Habitacion{
@@ -32,40 +36,137 @@ class UsoGeneral inherits Habitacion{
 	
 }
 
-class Dormitorio inherits Habitacion{	
-	const duermen = []
-	
-	method duermeEnLaHabitacion(persona) = duermen.contains(persona)
-	
-	override method nivelDeConfort(persona) = super(persona) +  if(self.duermeEnLaHabitacion(persona)){(10 / duermen.size())}else{0}
-
-	override method puedeEntrar(unaPersona){
-		return self.duermeEnLaHabitacion(unaPersona) or ocupantes.all({o => self.duermeEnLaHabitacion(o)})
-	}
-
-}
-
 class Banio inherits Habitacion{
 	
-	override method nivelDeConfort(persona) =  super(persona) + if (persona.edad()<=4){2}else{4}
+	override method nivelDeConfort(unaPersona) = super(unaPersona) + if(unaPersona.edad() <= 4){2}else{4}
 	
-	override method puedeEntrar(unaPersona) = ocupantes.any({o => o.edad() <= 4})
+	method hayPersonaMenorA(anio) = ocupantes.any({p => p.edad() < anio})
+	
+	override method puedeEntrar(unaPersona) = self.hayPersonaMenorA(5)
+	
 }
 
+class Dormitorio inherits Habitacion{
+	const duermen = #{}
+	
+	method agregarEnDormitorio(unaPersona){
+		duermen.add(unaPersona)
+	}
+	
+	method estanTodosEnElDormitorio() = duermen.all({d => ocupantes.contains(d)})
+	
+	method duermeEnDormitorio(unaPersona) = duermen.contains(unaPersona)
+	
+	override method puedeEntrar(unaPersona) = self.duermeEnDormitorio(unaPersona) or self.estanTodosEnElDormitorio()
+	
+	method cantQueDuermen() = duermen.size()
+	
+	override method nivelDeConfort(unaPersona) = super(unaPersona) + if(self.duermeEnDormitorio(unaPersona)){10/self.cantQueDuermen()}else{0}
+	
+}
 
 class Cocina inherits Habitacion{
-	const porcentajeUnidades = unidades
-	var metrosCuadrados
+	const metrosCuadrados
 	
-	method unidadesDeConfort() = metrosCuadrados * porcentajeUnidades.unidades()
+	method porcentaje() = metrosCuadrados * porcentaje.porcentaje()
 	
-	override method nivelDeConfort(persona) = super(persona) + if(persona.tieneHablidadEnCocina()){self.unidadesDeConfort()}else{0}
-
-	override method puedeEntrar(unaPersona) = (unaPersona.tieneHablidadEnCocina() and not ocupantes.any({o => o.tieneHablidadEnCocina()})) or not unaPersona.tieneHablidadEnCocina()
-
+	override method nivelDeConfort(unaPersona) = super(unaPersona) + if(unaPersona.sabeCocinar()){self.porcentaje()}else{0}
+	
+	method esCocineroYNoHayCocinero(unaPersona) = unaPersona.sabeCocinar() and not ocupantes.any({p => p.sabeCocinar()})
+	
+	override method puedeEntrar(unaPersona) = not unaPersona.sabeCocinar() or self.esCocineroYNoHayCocinero(unaPersona)
+		
 }
 
-object unidades{
+object porcentaje{
+	var property porcentaje = 0.1
+}
+
+class Persona{
+	var property habitacion = null
+	const property edad
+	var property sabeCocinar
 	
-	var property unidades = 0.1
+	method puedeEntrarEnUnaHabitacion(casa){
+		return casa.habitaciones().any({h => h.puedeEntrar(self)})
+	}
+	
+	method estaAGutsoEn(casa,familia) = self.puedeEntrarEnUnaHabitacion(casa)
+}
+
+class Obsesive inherits Persona{
+	
+	override method estaAGutsoEn(casa,familia){
+		return super(casa,familia) and casa.cantidadEnHabitacion() <= 2
+	}
+}
+
+class Golose inherits Persona{
+	
+	override method estaAGutsoEn(casa,familia){
+		return super(casa,familia) and familia.alMenosUnoSabeCocinar()
+	}
+}
+
+class Sencille inherits Persona{
+	
+	override method estaAGutsoEn(casa,familia){
+		return super(casa,familia) and casa.cantidadHabitaciones() > familia.cantidadDeMiembros()
+	}
+}
+
+class Familia{
+	const property integrantes = #{}
+	const property casaDondeViven
+	
+	method quitarIntegrante(unIntegrante){
+		integrantes.remove(unIntegrante)
+	}
+	
+	method agregarIntegrante(unIntegrante){
+		integrantes.add(unIntegrante)
+	}
+	
+	method alMenosUnoSabeCocinar() = integrantes.any({i => i.sabecocinar()})
+	
+	method cantidadDeMiembros() = integrantes.size()
+	
+	method nivelDeConfort() = casaDondeViven.habitaciones().sum({h => h.nivelDeConfortDeCadaOcupante()})
+	
+	method nivelDeConfortPromedio(){
+		return self.nivelDeConfort() /self.cantidadDeMiembros()
+	}
+	
+	method cadaMiembroEstaAGusto() = integrantes.all({i => i.estaAGutsoEn(casaDondeViven,self)})
+	
+	method estaAGusto(){
+		return self.nivelDeConfortPromedio() > 4 and self.cadaMiembroEstaAGusto()
+	}
+	
+}
+
+class Casa{
+	const property habitaciones = #{}
+	
+	
+	method cantidadHabitaciones() = habitaciones.size()
+	
+	method agregarHabitacion(unaHabitacion){
+		habitaciones.add(unaHabitacion)
+	}
+	
+	method quitarHabitacion(unaHabitacion){
+		habitaciones.remove(unaHabitacion)
+	}
+	
+	method cantHabitacionesConOcupantes() = habitaciones.count({h => not h.ocupantes().isEmty()})
+	
+	method HabitacionesOcupadas(){
+		if (self.cantHabitacionesConOcupantes() == 0){
+			self.error("Debe haber al menos una habitacion con ocupante")
+		}
+		return habitaciones.filter({h => not h.ocupantes().isEmty()})
+	}
+	
+	method responsables() = habitaciones.max({h => h.ocupanteMasViejos().edad()})
 }
